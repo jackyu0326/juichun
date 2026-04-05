@@ -36,43 +36,49 @@
 
     <script>
         let studentInfo = "";
-    
-        // 1. 預先定義初始化邏輯
+
+        // 初始化 Agent 配置
         function initAgent() {
             if (typeof chatSdk !== 'undefined') {
                 const context = chatSdk.prebuilts.ces.createContext({
+                    // 確認這是從 Vertex AI Agent Builder 生成的部署名稱
                     deploymentName: "projects/512548635446/locations/us/apps/b67c60af-51cd-43d7-8b5e-767d0665597f/deployments/802e7f50-ddcf-4f92-bfd4-569611c6840b",
                     tokenBroker: {
-                        enableTokenBroker: false,
-                        apiKey: "AIzaSyDy0mSgK5K6dAwj-dfbqxzYy8Ad4oX20Uc",
+                        enableTokenBroker: false, // 必須為 false 才能使用 apiKey
+                        apiKey: "AIzaSyDy0mSgK5K6dAwj-dfbqxzYy8Ad4oX20Uc", // 確保此 Key 已勾選 Dialogflow API 權限
                         enableRecaptcha: false
                     }
                 });
                 chatSdk.registerContext(context);
-                
-                // 延遲發送身分訊息
+                console.log("Agent Context Registered");
+
+                // 當學生進入時，自動發送身分訊息
                 setTimeout(() => {
                     if (studentInfo) {
-                        chatSdk.sendMessage(`我是 ${studentInfo}，我準備好開始互動了。`);
+                        const messenger = document.querySelector('chat-messenger');
+                        if (messenger) {
+                            // 使用 setAttribute 'intent' 是最穩定的自動發送方式
+                            messenger.setAttribute('intent', `我是 ${studentInfo}，我準備好開始互動了。`);
+                        }
                     }
-                }, 2000);
+                }, 2500);
             }
         }
-    
-        // 2. 監聽載入事件
+
+        // 監聽 SDK 載入
         window.addEventListener("chat-messenger-loaded", initAgent);
-    
+
         function startChat() {
             const info = document.getElementById('student-info').value;
             if (!info) return alert("請輸入資訊！");
             
             studentInfo = info;
             
-            // 顯示界面
+            // 介面切換
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('chat-interface').style.display = 'block';
-    
-            // 如果 SDK 已經載入好了但事件沒觸發，手動跑一次
+
+            // 如果 SDK 早已載入，手動補跑初始化
             if (typeof chatSdk !== 'undefined') {
                 initAgent();
             }
