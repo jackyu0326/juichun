@@ -47,7 +47,7 @@
             window.addEventListener("chat-messenger-loaded", () => {
                 const context = chatSdk.prebuilts.ces.createContext({
                     deploymentName: "projects/512548635446/locations/us/apps/b67c60af-51cd-43d7-8b5e-767d0665597f/deployments/802e7f50-ddcf-4f92-bfd4-569611c6840b",
-                    tokenBroker: { enableTokenBroker: true, enableRecaptcha: false }
+                    tokenBroker: { enableTokenBroker: false, enableRecaptcha: false }
                 });
                 chatSdk.registerContext(context);
                 
