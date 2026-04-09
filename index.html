@@ -21,27 +21,11 @@
         button:disabled { background: #ccc; cursor: not-allowed; }
         #loading-info { font-size: 13px; color: #5f6368; margin: 10px 0; }
         /* 正在輸入動畫的點點樣式 */
-        .typing {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-            min-height: 24px;
-            width: fit-content;            
-        }
-        .dot {
-            width: 6px;
-            height: 6px;
-            background: #5f6368;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out;
-        }
+        .typing { display: flex; gap: 4px; align-items: center; min-height: 24px; width: fit-content; }
+        .dot { width: 6px; height: 6px; background: #5f6368; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
         .dot:nth-child(1) { animation-delay: -0.32s; }
         .dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }        
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }        
     </style>
 </head>
 <body>
@@ -68,13 +52,10 @@
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // --- 防偵測 API Key 拼接 ---
-        // 請將你的新 Key 拆成兩半填入
         const p1 = "AIzaSyBPv6lHbT97fs"; 
         const p2 = "fIra7gwNZUw0PiNbAsfP0";
         const API_KEY = p1 + p2;
         const PDF_FILENAME = "syllabus.pdf";
-        // -------------------------
 
         const genAI = new GoogleGenerativeAI(API_KEY);
         let chat;
@@ -110,10 +91,10 @@
                 model: "gemini-3.1-flash-lite-preview", 
                 systemInstruction: `你是一位專業的教學助理。學生姓名是 ${name}。
                 你已經收到了這份課程大綱 (syllabus.pdf)。
-                請精確地根據大綱內容回答學生的問題，例如：評分標準、上課時間、教學目標等。
-                若大綱未提及，請引導學生詢問教授。請務必使用繁體中文。`
+                請精確地根據大綱內容回答學生的問題。請務必使用繁體中文。`
             });
 
+            // 初始設定：PDF 只放在這裡
             chat = model.startChat({
                 history: [
                     { role: "user", parts: [pdfPart, { text: "這是本學期的課程大綱，請讀取並準備回答問題。" }] },
@@ -132,23 +113,26 @@
             addMessage("user", text);
             inputField.value = "";
             btn.disabled = true;
-        
             showTypingIndicator();
-        
-            // 紀錄開始時間
             const startTime = Date.now();
         
             try {
+                // --- 關鍵優化：對話歷史管理 ---
+                let history = await chat.getHistory();
+                if (history.length > 12) { // 保留初始 PDF(2) + 最近對話(10)
+                    const initialContext = history.slice(0, 2); // 保留帶有 PDF 的初始問答
+                    const recentContext = history.slice(-10);   // 保留最近 10 筆對話
+                    chat.history = [...initialContext, ...recentContext];
+                }
+
                 const result = await chat.sendMessage(text);
                 const responseText = result.response.text();
         
-                // 計算已經過了多久，如果不足 1000ms 則補足，確保動畫會閃一下
                 const elapsed = Date.now() - startTime;
                 const delay = Math.max(0, 1000 - elapsed);
                 
                 setTimeout(() => {
                     removeTypingIndicator();
-                    // 使用打字機效果呈現回應
                     typeMessage("ai", responseText);
                 }, delay);
         
@@ -156,21 +140,17 @@
                 removeTypingIndicator();
                 addMessage("ai", "連線錯誤：" + error.message);
             } finally {
-                // 延遲恢復按鈕，避免連續點擊
                 setTimeout(() => { btn.disabled = false; }, 1000);
             }
         };
         
-        // 新增：打字機效果函數
         function typeMessage(role, text) {
             const container = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = `msg ${role}`;
             container.appendChild(div);
-            
             let i = 0;
-            const speed = 30; // 每個字出現的速度 (毫秒)
-            
+            const speed = 30;
             function type() {
                 if (i < text.length) {
                     div.innerText += text.charAt(i);
