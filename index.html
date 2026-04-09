@@ -83,25 +83,34 @@
         window.enterApp = () => {
             const name = document.getElementById('stu-name').value.trim();
             if (!name) return alert("請輸入姓名");
-
+        
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
-
+        
             const model = genAI.getGenerativeModel({ 
-                model: "gemini-3.1-flash-lite-preview", 
+                // 建議使用 1.5-flash 以獲得最穩定的搜尋工具支援
+                model: "gemini-1.5-flash", 
+                // --- 核心修改：開啟 Google 搜尋能力 ---
+                tools: [{ googleSearch: {} }], 
                 systemInstruction: `你是一位專業的教學助理。學生姓名是 ${name}。
-                你已經收到了這份課程大綱 (syllabus.pdf)。
-                請精確地根據大綱內容回答學生的問題。請務必使用繁體中文。`
+                你擁有這份課程大綱 (syllabus.pdf) 作為核心參考。
+        
+                【任務指令】：
+                1. 課程行政問題：如評分、時間、大綱內容，請嚴格根據 PDF 回答。
+                2. 學術擴充問題：若學生詢問課程相關的學術概念（如「質性研究」的定義、著名論文、研究方法），請務必使用 Google 搜尋工具提供最新、權威的資料與來源。
+                3. 婉拒非課程相關問題：若學生詢問生活雜事（如：天氣、運動、八卦、午餐推薦），請禮貌回答：「我是您的課程助教，目前僅能協助您處理與本課程或學術研究相關的問題喔！」
+        
+                請務必使用繁體中文回答，並在引用網路資料時標註來源。`
             });
-
-            // 初始設定：PDF 只放在這裡
+        
+            // 初始設定不變
             chat = model.startChat({
                 history: [
                     { role: "user", parts: [pdfPart, { text: "這是本學期的課程大綱，請讀取並準備回答問題。" }] },
-                    { role: "model", parts: [{ text: "你好 " + name + "！我已讀完課程大綱。請問有什麼我可以幫你的嗎？" }] }
+                    { role: "model", parts: [{ text: "你好 " + name + "！我已讀完課程大綱，並已連線至 Google 搜尋。我可以協助你查詢課綱資訊或進行學術專題研究。請問今天想討論什麼？" }] }
                 ]
             });
-            addMessage("ai", `你好 ${name}！我已經讀完課程大綱了。請問關於課程安排你有什麼想了解的嗎？`);
+            addMessage("ai", `你好 ${name}！我準備好了。除了課綱問題，如果你有想深入研究的學術主題（如質性研究），我也可以幫你搜尋文獻喔！`);
         };
 
         window.send = async () => {
