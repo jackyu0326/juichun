@@ -133,20 +133,54 @@
             inputField.value = "";
             btn.disabled = true;
         
-            // 顯示 AI 正在思考的動畫
             showTypingIndicator();
+        
+            // 紀錄開始時間
+            const startTime = Date.now();
         
             try {
                 const result = await chat.sendMessage(text);
-                removeTypingIndicator(); // 移除動畫
-                addMessage("ai", result.response.text());
+                const responseText = result.response.text();
+        
+                // 計算已經過了多久，如果不足 1000ms 則補足，確保動畫會閃一下
+                const elapsed = Date.now() - startTime;
+                const delay = Math.max(0, 1000 - elapsed);
+                
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    // 使用打字機效果呈現回應
+                    typeMessage("ai", responseText);
+                }, delay);
+        
             } catch (error) {
                 removeTypingIndicator();
                 addMessage("ai", "連線錯誤：" + error.message);
             } finally {
-                btn.disabled = false;
+                // 延遲恢復按鈕，避免連續點擊
+                setTimeout(() => { btn.disabled = false; }, 1000);
             }
         };
+        
+        // 新增：打字機效果函數
+        function typeMessage(role, text) {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            container.appendChild(div);
+            
+            let i = 0;
+            const speed = 30; // 每個字出現的速度 (毫秒)
+            
+            function type() {
+                if (i < text.length) {
+                    div.innerText += text.charAt(i);
+                    i++;
+                    container.scrollTop = container.scrollHeight;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
         
         function addMessage(role, text) {
             const container = document.getElementById('messages');
